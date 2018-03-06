@@ -329,6 +329,7 @@ USER_AGENT = "unglue.it.bot v0.0.1 <https://unglue.it>"
 GLUEJAR_COMMISSION = 0.06
 PREAPPROVAL_PERIOD = 365 # days to ask for in a preapproval
 PREAPPROVAL_PERIOD_AFTER_CAMPAIGN = 90 # if we ask for preapproval time after a campaign deadline
+PAYPAL_GLUEJAR_EMAIL = 'info@ebookfoundation.org' #legacy code needs this
 
 # How many days we will try to collect on failed transactions until they are written off
 RECHARGE_WINDOW = 14
@@ -425,6 +426,7 @@ SHOW_GOOGLE_ANALYTICS = False
 
 # to enable uploading to S3 and integration of django-storages + django-ckeditor
 # some variables to be overriddden in more specific settings files -- e.g., prod.py, 
+CKEDITOR_ALLOW_NONIMAGE_FILES = False
 
 AWS_ACCESS_KEY_ID = ''
 AWS_SECRET_ACCESS_KEY = ''

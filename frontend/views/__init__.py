@@ -528,7 +528,11 @@ BAD_ROBOTS = [u'memoryBot']
 def is_bad_robot(request):
     user_agent = request.META.get('HTTP_USER_AGENT', '')
     for robot in BAD_ROBOTS:
-        if robot in user_agent:
+        try:
+            if robot in user_agent:
+                return True
+        except UnicodeDecodeError:
+            # user agent is sending illegal header
             return True
     return False        
 
@@ -659,7 +663,6 @@ class WorkListView(FilterableListView):
     def get_context_data(self, **kwargs):
         context = super(WorkListView, self).get_context_data(**kwargs)
         qs = self.get_queryset()
-        context['ungluers'] = userlists.work_list_users(qs, 5)
         context['facet'] = self.kwargs.get('facet','')
         works_unglued = qs.filter(is_free = True).distinct() | qs.filter(campaigns__status='SUCCESSFUL').distinct()
         context['works_unglued'] = works_unglued[:self.max_works]
@@ -787,7 +790,6 @@ class UngluedListView(FilterableListView):
     def get_context_data(self, **kwargs):
         context = super(UngluedListView, self).get_context_data(**kwargs)
         qs = self.get_queryset()
-        context['ungluers'] = userlists.work_list_users(qs, 5)
         facet = self.kwargs['facet']
         context['facet'] = facet
         if facet == 'cc' or facet == 'creativecommons':
@@ -836,7 +838,6 @@ class CampaignListView(FilterableListView):
     def get_context_data(self, **kwargs):
         context = super(CampaignListView, self).get_context_data(**kwargs)
         qs = self.get_queryset()
-        context['ungluers'] = userlists.campaign_list_users(qs, 5)
         facet = self.kwargs['facet']
         context['facet'] = facet
         context['facet_label'] = FACET_LABELS.get(facet, 'Active')
@@ -1049,7 +1050,7 @@ class PledgeView(FormView):
             host = PAYMENT_HOST_NONE,
             campaign=self.campaign,
             user=self.request.user,
-            paymentReason="Unglue.it Pledge for {0}".format(self.campaign.name),
+            paymentReason=u"Unglue.it Pledge for {0}".format(self.campaign.name),
             pledge_extra=form.trans_extra,
             donation = donation
         )
@@ -1851,7 +1852,6 @@ def supporter(request, supporter_username, template_name, extra_context={}):
             "backing": backing,
             "wished": wished,
             "profile_form": profile_form,
-            "ungluers": userlists.other_users(supporter, 5),
             "activetab": activetab,
     }
     context.update(extra_context)
@@ -1902,7 +1902,7 @@ class ManageAccount(FormView):
             return render(self.request, self.template_name, self.get_context_data())
 
 def search(request):
-    q = request.GET.get('q', '')
+    q = request.GET.get('q', '').strip()
     ty = request.GET.get('ty', 'g')  # ge= 'general, au= 'author'
     request.session['q'] = q
     try:
@@ -1912,7 +1912,7 @@ def search(request):
         page = 1
     gbo = request.GET.get('gbo', 'n') # gbo is flag for google books only
     our_stuff =  Q(is_free=True) | Q(campaigns__isnull=False)
-    if q != '' and page == 1 and not gbo == 'y':
+    if len(q) > 1 and page == 1 and not gbo == 'y':
         isbnq = ISBN(q)
         if isbnq.valid:
             work_query = Q(identifiers__value=str(isbnq), identifiers__type="isbn")
